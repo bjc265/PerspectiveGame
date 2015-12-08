@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry kind="lib" path="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/lib/lwjgl/lwjgl.jar">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/lib/lwjgl/win32"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/dist/jbullet.jar" sourcepath="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/src">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/dist/javadoc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jpct/lib/jpct/jpct.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jpct/doc/javadoc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/Brett/workspace/CS462x/CS4621FP/deps/jbullet-20101010/lib/vecmath/vecmath.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
