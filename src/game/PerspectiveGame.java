@@ -4,13 +4,17 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.vecmath.Vector3f;
 
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Clock;
+import com.bulletphysics.linearmath.Transform;
+import com.threed.jpct.Camera;
 import com.threed.jpct.Config;
 import com.threed.jpct.FrameBuffer;
 import com.threed.jpct.IRenderer;
+import com.threed.jpct.SimpleVector;
 import com.threed.jpct.World;
 
 import level.CameraBody;
@@ -33,31 +37,33 @@ public class PerspectiveGame {
 				levelData.getBroadphase(),
 				levelData.getConstraintSolver(),
 				levelData.getCollisionConfiguration());
+		dWorld.setGravity(new Vector3f(0,-9.8f,0));
 		rWorld = new World();
 		rWorld.setAmbientLight(120, 120, 120);
 		
 		
 		//add the ObjectBody representing the camera to the physics world, and align the camera with it's render object
-		ObjectBody cameraBody = levelData.getCameraBody();
+		ObjectBody cameraBody = new ObjectBody(levelData.getCameraBody());
 		dWorld.addRigidBody(cameraBody.rigidBody);
 		rWorld.addObject(cameraBody.renderObject);
-		rWorld.getCamera().align(cameraBody.renderObject);
+		
 		cameraBody.renderObject.setName("camera");
 		cameraBody.renderObject.setVisibility(false);
 		objects.add(cameraBody);
 		
 		
 		//add each RigidBody to physics world, and add corresponding Object3D to render world
-		for(RigidBody rb : levelData.getObjectBodies()){
+		RigidBody[] bodies = levelData.getObjectBodies();
+		for(RigidBody rb : bodies){
 			ObjectBody ob = new ObjectBody(rb);
-			dWorld.addCollisionObject(ob.rigidBody);
+			dWorld.addRigidBody(ob.rigidBody);
 			rWorld.addObject(ob.renderObject);
 			objects.add(ob);
 		}
 		
 		
 		
-		
+		clock = new Clock();
 		
 		frame=new JFrame("JPCTBullet Test");
 		frame.setSize(800, 600);
@@ -80,7 +86,7 @@ public class PerspectiveGame {
 
 	private void run() {
 		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
-		
+		Transform test = new Transform();
 		while(frame.isShowing()){
 			
 			//update physics
@@ -88,9 +94,19 @@ public class PerspectiveGame {
 			clock.reset();
 			dWorld.stepSimulation(t/1000000f);
 			
-			//update ObjectBodies (includes camera)
+			
+			//update ObjectBodies
 			for(ObjectBody o : objects)
 				o.update();
+			
+			//update camera
+			rWorld.getCamera().setOrientation(new SimpleVector(0,0,1), new SimpleVector(0,1,0));
+			//rWorld.getCamera().align(rWorld.getObjectByName("camera"));
+			rWorld.getCamera().setPositionToCenter(rWorld.getObjectByName("camera"));
+			
+			
+			
+			System.out.println(rWorld.getObject(1).getTranslation());
 			
 			//render
 			buffer.clear();

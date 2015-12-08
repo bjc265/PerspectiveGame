@@ -28,7 +28,7 @@ public abstract class Level {
 	/**
 	 * Camera is assumed to be facing <1,0,0>, so to face another direction, rotate the RigidBody accordingly.
 	 */
-	public abstract ObjectBody getCameraBody();
+	public abstract RigidBody getCameraBody();
 
 	public abstract RigidBody[] getObjectBodies();
 	
