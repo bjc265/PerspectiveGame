@@ -1,5 +1,8 @@
 package level;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import game.ObjectBody;
 
 import javax.vecmath.Vector3f;
@@ -13,6 +16,7 @@ import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
+import com.threed.jpct.TextureManager;
 
 /**
  * The level class is our way of creating pre-built game levels. Because adding jBullet 
@@ -25,27 +29,55 @@ import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSo
  */
 public abstract class Level {
 	
+	
+	public final ObjectBody cameraBody;
+	public final List<ObjectBody> objectBodies;
+	public final BroadphaseInterface broadphase;
+	public final CollisionConfiguration collisionConfiguration;
+	public final ConstraintSolver constraintSolver;
+	public final Dispatcher dispatcher;
+	
+	public Level(){
+		
+		cameraBody = constructCameraBody();
+		
+		objectBodies = new LinkedList<ObjectBody>();
+		broadphase = constructBroadphase();
+		collisionConfiguration = constructCollisionConfiguration();
+		constraintSolver = constructConstraintSolver();
+		dispatcher = constructDispatcher(collisionConfiguration);
+		
+		addTextures(TextureManager.getInstance());
+		addObjectBodies(objectBodies);
+		cameraBody.rigidBody.setAngularFactor(0);
+		cameraBody.renderObject.setVisibility(false);
+		
+	}
+	
+	
 	/**
 	 * Camera is assumed to be facing <1,0,0>, so to face another direction, rotate the RigidBody accordingly.
 	 */
-	public abstract RigidBody getCameraBody();
+	protected abstract ObjectBody constructCameraBody();
 
-	public abstract RigidBody[] getObjectBodies();
+	protected abstract void addObjectBodies(List<ObjectBody> bodies);
 	
-	public BroadphaseInterface getBroadphase(){
+	protected abstract void addTextures(TextureManager manager);
+	
+	protected BroadphaseInterface constructBroadphase(){
 		return new AxisSweep3(new Vector3f(-1000,-1000,-1000),new Vector3f(1000,1000,1000));
 	}
 	
-	public CollisionConfiguration getCollisionConfiguration(){
+	protected CollisionConfiguration constructCollisionConfiguration(){
 		return new DefaultCollisionConfiguration();
 	}
 	
-	public ConstraintSolver getConstraintSolver(){
+	protected ConstraintSolver constructConstraintSolver(){
 		return new SequentialImpulseConstraintSolver();
 	}
 	
-	public Dispatcher getDispatcher(){
-		return new CollisionDispatcher(getCollisionConfiguration());
+	protected Dispatcher constructDispatcher(CollisionConfiguration config){
+		return new CollisionDispatcher(config);
 	}
 	
 	
