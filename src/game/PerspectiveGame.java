@@ -1,11 +1,20 @@
 package game;
 
+import java.awt.DisplayMode;
+import java.awt.RenderingHints.Key;
+import java.awt.event.KeyAdapter;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
+import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.Display;
+
+import com.bulletphysics.collision.dispatch.CollisionObject;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Clock;
@@ -14,8 +23,11 @@ import com.threed.jpct.Camera;
 import com.threed.jpct.Config;
 import com.threed.jpct.FrameBuffer;
 import com.threed.jpct.IRenderer;
+import com.threed.jpct.Object3D;
 import com.threed.jpct.SimpleVector;
 import com.threed.jpct.World;
+import com.threed.jpct.util.KeyMapper;
+import com.threed.jpct.util.KeyState;
 
 import level.Level;
 
@@ -31,9 +43,27 @@ public class PerspectiveGame {
 	private List<ObjectBody> objects = new LinkedList<ObjectBody>();
 
 	private Level levelData;
+	
+	private KeyMapper keyMapper;
+	private KeyState currKey;
+
+	private ObjectBody cameraBody;
+	private float cameraPitch;
+	private Transform cameraTr;
+	
+	private boolean[] motionStates;
+	private boolean[] rotationStates;
+	
+	private Matrix3f yRotCC;
+	private Matrix3f yRotC;
+	
+	
+	public final float F_SPEED = 120;
 
 	public PerspectiveGame(Level ld){
 		levelData = ld;
+		
+		
 		//construct physics and render worlds
 		rWorld = new World();
 		dWorld = new DiscreteDynamicsWorld(
@@ -42,12 +72,14 @@ public class PerspectiveGame {
 				levelData.constraintSolver,
 				levelData.collisionConfiguration);
 
+		cameraPitch = 0;
+
 		initializeCamera();
 		initializeBodies();
 		miscellaniousSetup();
 
 		//to be moved to Level class for customizability
-		dWorld.setGravity(new Vector3f(-9.8f,-9.8f,0));
+		dWorld.setGravity(new Vector3f(0,-9.8f,0));
 		rWorld.setAmbientLight(120, 120, 120);
 	}
 
@@ -73,7 +105,7 @@ public class PerspectiveGame {
 	 */
 	private void initializeCamera() {
 		//add the ObjectBody representing the camera to the physics world, and align the camera with it's render object
-		ObjectBody cameraBody = levelData.cameraBody;
+		cameraBody = levelData.cameraBody;
 		dWorld.addRigidBody(cameraBody.rigidBody);
 		rWorld.addObject(cameraBody.renderObject);
 		objects.add(cameraBody);
@@ -82,32 +114,48 @@ public class PerspectiveGame {
 		cameraBody.renderObject.setName("camera");
 		cameraBody.renderObject.setVisibility(false);
 		cameraBody.rigidBody.setAngularFactor(0);
+		cameraBody.rigidBody.setFriction(1000);
 	}
 
 	/**
 	 * Additional things that need to be set up, such as the clock, the rendering frame, the frame buffer, and the number of cores used 
 	 */
 	private void miscellaniousSetup() {
+		
+		cameraTr = new Transform();
+		
+		motionStates = new boolean[]{false,false,false,false};
+		rotationStates = new boolean[]{false,false,false,false};
+		
 		clock = new Clock();
 		frame=new JFrame("JPCTBullet Test");
 		frame.setSize(800, 600);
 		frame.setVisible(true);
 		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		
+		keyMapper = new KeyMapper(frame);
+		
 		int cpu = Runtime.getRuntime().availableProcessors();
 		if(cpu > 1){
 			Config.useMultipleThreads = true;
 			Config.maxNumberOfCores = cpu;
 			Config.loadBalancingStrategy = 1;
 		}
+		
+		yRotCC = new Matrix3f();
+		yRotCC.rotY((float)Math.PI/2f);
+		yRotC = new Matrix3f();
+		yRotC.rotY((float)-Math.PI/2f);
 	}
 
 	private void run() {
 		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
 		while(frame.isShowing()){
 			//update physics
-			float t = clock.getTimeMicroseconds();
+			float t = clock.getTimeMicroseconds()/1000000f;
 			clock.reset();
-			dWorld.stepSimulation(t/1000000f);
+			dWorld.stepSimulation(t);
+
 
 
 			//update ObjectBodies
@@ -116,11 +164,75 @@ public class PerspectiveGame {
 
 
 			//update camera
-			rWorld.getCamera().align(rWorld.getObjectByName("camera"));
-			rWorld.getCamera().setPositionToCenter(rWorld.getObjectByName("camera"));
+			Object3D cameraObj = rWorld.getObjectByName("camera");
+			Camera camera = rWorld.getCamera(); 
+			camera.align(cameraObj);
+			camera.rotateAxis(cameraObj.getXAxis(), cameraPitch);
+			camera.setPositionToCenter(cameraObj);
+			Transform tr = new Transform();
+			dWorld.getCollisionObjectArray().get(1).getWorldTransform(tr);
 
-			System.out.println(rWorld.getCamera().getDirection());
-
+			//keyboard input
+			
+			cameraBody.rigidBody.getWorldTransform(cameraTr);
+			SimpleVector forward = camera.getDirection();
+			Vector3f f = new Vector3f(forward.x,forward.y,forward.z);
+			
+			if(motionStates[0])
+				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t));
+			if(motionStates[1])
+				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-f.x*F_SPEED*t,-f.y*F_SPEED*t,-f.z*F_SPEED*t));
+			if(motionStates[2]){
+				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
+				yRotCC.transform(l);
+				System.out.println(l);
+				cameraBody.rigidBody.applyCentralImpulse(l);
+			}
+			if(motionStates[3]){
+				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
+				yRotC.transform(l);
+				cameraBody.rigidBody.applyCentralImpulse(l);
+			}
+			
+			
+			do{
+				currKey = keyMapper.poll();
+				switch(currKey.getKeyCode()){
+				case(87):	//w
+					if(currKey.getState()){
+						motionStates[0] = true;
+					} else{
+						motionStates[0] = false;
+					}
+					break;
+				case(83):	//s
+					if(currKey.getState()){
+						motionStates[1] = true;
+					} else{
+						motionStates[1] = false;
+					}
+					break;
+				case(65):	//a
+					if(currKey.getState()){
+						motionStates[2] = true;
+					} else{
+						motionStates[2] = false;
+					}
+					break;
+				case(68):	//d
+					if(currKey.getState()){
+						motionStates[3] = true;
+					} else{
+						motionStates[3] = false;
+					}
+					break;
+				default:
+					break;
+				}
+			} while(currKey != KeyState.NONE);
+			
+			
+			
 			//render
 			buffer.clear();
 			rWorld.renderScene(buffer);
