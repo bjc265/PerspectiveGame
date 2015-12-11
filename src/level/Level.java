@@ -17,6 +17,8 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.threed.jpct.TextureManager;
+import com.threed.jpct.World;
+import com.threed.jpct.util.Light;
 
 /**
  * The level class is our way of creating pre-built game levels. Because adding jBullet 
@@ -36,8 +38,11 @@ public abstract class Level {
 	public final CollisionConfiguration collisionConfiguration;
 	public final ConstraintSolver constraintSolver;
 	public final Dispatcher dispatcher;
+
 	
 	public Level(){
+		
+		
 		
 		cameraBody = constructCameraBody();
 		
@@ -63,6 +68,8 @@ public abstract class Level {
 	protected abstract void addObjectBodies(List<ObjectBody> bodies);
 	
 	protected abstract void addTextures(TextureManager manager);
+	
+	public abstract void addLights(World world);
 	
 	protected BroadphaseInterface constructBroadphase(){
 		return new AxisSweep3(new Vector3f(-1000,-1000,-1000),new Vector3f(1000,1000,1000));

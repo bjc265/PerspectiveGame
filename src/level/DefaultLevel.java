@@ -13,9 +13,14 @@ import com.bulletphysics.collision.shapes.StaticPlaneShape;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
+import com.threed.jpct.SimpleVector;
 import com.threed.jpct.TextureManager;
+import com.threed.jpct.World;
+import com.threed.jpct.util.Light;
 
 public class DefaultLevel extends Level {
+
+	
 
 	@Override
 	public ObjectBody constructCameraBody() {
@@ -31,6 +36,7 @@ public class DefaultLevel extends Level {
 		s.translate(new Vector3f(0,0,3));
 		ObjectBody so = new ObjectBody(s);
 		so.renderObject.setAdditionalColor(new Color(255,0,0));
+		so.renderObject.setSpecularLighting(true);
 		bodies.add(so);
 		
 		RigidBody ss = new RigidBody(0.5f, new DefaultMotionState(), new SphereShape(0.67f));
@@ -57,6 +63,19 @@ public class DefaultLevel extends Level {
 	protected void addTextures(TextureManager manager) {
 		
 		
+	}
+
+	@Override
+	public void addLights(World world) {
+		world.setAmbientLight(5, 5, 5);
+		
+		Light light = new Light(world);
+		light.setPosition(new SimpleVector(3,0,0));
+		light.setIntensity(10,10,10);
+		
+		Light light2 = new Light(world);
+		light2.setPosition(new SimpleVector(-6,-1,1));
+		light2.setIntensity(30, 30, 30);
 	}
 
 }

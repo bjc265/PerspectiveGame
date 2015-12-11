@@ -52,6 +52,7 @@ public class PerspectiveGame {
 	private Matrix3f yRotCC;
 	private Matrix3f yRotC;
 	
+	
 	@SuppressWarnings("unused")
 	private MouseMapper input;
 	
@@ -73,11 +74,11 @@ public class PerspectiveGame {
 
 		initializeCamera();
 		initializeBodies();
+		initializeLights();
 		miscellaniousSetup();
 
 		//to be moved to Level class for customizability
 		dWorld.setGravity(new Vector3f(0,-9.8f,0));
-		rWorld.setAmbientLight(120, 120, 120);
 	}
 
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
@@ -112,6 +113,10 @@ public class PerspectiveGame {
 		cameraBody.renderObject.setVisibility(false);
 		cameraBody.rigidBody.setAngularFactor(0);
 		cameraBody.rigidBody.setFriction(1000);
+	}
+
+	private void initializeLights() {
+		levelData.addLights(rWorld);
 	}
 
 	/**
@@ -173,27 +178,42 @@ public class PerspectiveGame {
 			Object3D cameraObj = rWorld.getObjectByName("camera");
 			
 			camera.align(cameraObj);
-			camera.rotateAxis(cameraObj.getXAxis(), cameraPitch);
 			camera.setPositionToCenter(cameraObj);
+			SimpleVector dirNew = camera.getDirection();
+			dirNew.rotateX(cameraPitch);
+			SimpleVector upNew = camera.getUpVector();
+			upNew.rotateX(cameraPitch);
+			camera.setOrientation(dirNew, upNew);
 			Transform tr = new Transform();
 			dWorld.getCollisionObjectArray().get(1).getWorldTransform(tr);
 
 			//keyboard input
 			
 			cameraBody.rigidBody.getWorldTransform(cameraTr);
-			SimpleVector forward = camera.getDirection();
-			Vector3f f = new Vector3f(forward.x,forward.y,forward.z);
+			SimpleVector f = camera.getDirection();
+			f.y = 0;
+			SimpleVector s = camera.getSideVector();
+			s.y = 0;
 			
 			if(motionStates[0])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t));
 			if(motionStates[1])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-f.x*F_SPEED*t,-f.y*F_SPEED*t,-f.z*F_SPEED*t));
+			if(motionStates[2])
+				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(s.x*F_SPEED*t,s.y*F_SPEED*t,s.z*F_SPEED*t));
+			if(motionStates[3])
+				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-s.x*F_SPEED*t,-s.y*F_SPEED*t,-s.z*F_SPEED*t));
 			
 			
+			if(rotationStates[0] && cameraPitch < (float)Math.PI/2f){
+				cameraPitch += (float)Math.PI*t;
+			}
+			if(rotationStates[1] && cameraPitch > (float)-Math.PI/2f){
+				cameraPitch -= (float)Math.PI*t;
+			}
 			if(rotationStates[2]){
 				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
 				yRotCC.transform(l);
-				System.out.println(l);
 				cameraBody.rigidBody.applyCentralImpulse(l);
 			}
 			if(rotationStates[3]){
