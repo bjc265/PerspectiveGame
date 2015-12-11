@@ -1,8 +1,7 @@
 package game;
 
-import java.awt.DisplayMode;
-import java.awt.RenderingHints.Key;
-import java.awt.event.KeyAdapter;
+import input.MouseMapper;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,13 +9,7 @@ import javax.swing.JFrame;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.Display;
-
-import com.bulletphysics.collision.dispatch.CollisionObject;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
-import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Clock;
 import com.bulletphysics.linearmath.Transform;
 import com.threed.jpct.Camera;
@@ -45,6 +38,7 @@ public class PerspectiveGame {
 	private Level levelData;
 	
 	private KeyMapper keyMapper;
+	private MouseMapper mouseMapper;
 	private KeyState currKey;
 
 	private ObjectBody cameraBody;
@@ -53,10 +47,13 @@ public class PerspectiveGame {
 	
 	private boolean[] motionStates;
 	private boolean[] rotationStates;
+	private boolean[] rescaleStates;
 	
 	private Matrix3f yRotCC;
 	private Matrix3f yRotC;
 	
+	@SuppressWarnings("unused")
+	private MouseMapper input;
 	
 	public final float F_SPEED = 120;
 
@@ -124,15 +121,19 @@ public class PerspectiveGame {
 		
 		cameraTr = new Transform();
 		
+		
 		motionStates = new boolean[]{false,false,false,false};
 		rotationStates = new boolean[]{false,false,false,false};
-		
+		rescaleStates = new boolean[]{false,false};
 		clock = new Clock();
 		frame=new JFrame("JPCTBullet Test");
 		frame.setSize(800, 600);
 		frame.setVisible(true);
 		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		
+		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
+		
+		input = new MouseMapper(rWorld,frame,buffer);
 		keyMapper = new KeyMapper(frame);
 		
 		int cpu = Runtime.getRuntime().availableProcessors();
@@ -149,23 +150,28 @@ public class PerspectiveGame {
 	}
 
 	private void run() {
-		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
+		
 		while(frame.isShowing()){
 			//update physics
 			float t = clock.getTimeMicroseconds()/1000000f;
 			clock.reset();
 			dWorld.stepSimulation(t);
 
+			Camera camera = rWorld.getCamera(); 
 
 
 			//update ObjectBodies
-			for(ObjectBody o : objects)
+			for(ObjectBody o : objects){
 				o.update();
-
+				if(rescaleStates[0] != rescaleStates[1] && mouseMapper.selectedObject != null && o.renderObject == mouseMapper.selectedObject)
+				{
+					//o.persepctiveScale(camera,t,rescaleStates[0]);
+				}
+			}
 
 			//update camera
 			Object3D cameraObj = rWorld.getObjectByName("camera");
-			Camera camera = rWorld.getCamera(); 
+			
 			camera.align(cameraObj);
 			camera.rotateAxis(cameraObj.getXAxis(), cameraPitch);
 			camera.setPositionToCenter(cameraObj);
@@ -182,17 +188,20 @@ public class PerspectiveGame {
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t));
 			if(motionStates[1])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-f.x*F_SPEED*t,-f.y*F_SPEED*t,-f.z*F_SPEED*t));
-			if(motionStates[2]){
+			
+			
+			if(rotationStates[2]){
 				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
 				yRotCC.transform(l);
 				System.out.println(l);
 				cameraBody.rigidBody.applyCentralImpulse(l);
 			}
-			if(motionStates[3]){
+			if(rotationStates[3]){
 				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
 				yRotC.transform(l);
 				cameraBody.rigidBody.applyCentralImpulse(l);
 			}
+			
 			
 			
 			do{
@@ -226,6 +235,47 @@ public class PerspectiveGame {
 						motionStates[3] = false;
 					}
 					break;
+				case(38):	//up arrow
+					if(currKey.getState()){
+						rotationStates[0] = true;
+					} else{
+						rotationStates[0] = false;
+					}
+					break;
+				case(40):	//down arrow
+					if(currKey.getState()){
+						rotationStates[1] = true;
+					} else{
+						rotationStates[1] = false;
+					}
+					break;
+				case(37):	//left arrow
+					if(currKey.getState()){
+						rotationStates[2] = true;
+					} else{
+						rotationStates[2] = false;
+					}
+					break;
+				case(39):	//right arrow
+					if(currKey.getState()){
+						rotationStates[3] = true;
+					} else{
+						rotationStates[3] = false;
+					}
+					break;
+				case(16):	//shift
+					if(currKey.getState()){
+						rescaleStates[0] = true;
+					} else{
+						rescaleStates[0] = false;
+					}
+					break;
+				case(17):	//ctrl
+					if(currKey.getState()){
+						rescaleStates[1] = true;
+					} else{
+						rescaleStates[1] = false;
+					}
 				default:
 					break;
 				}
