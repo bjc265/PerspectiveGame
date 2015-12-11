@@ -134,11 +134,11 @@ public class PerspectiveGame {
 		rescaleStates = new boolean[]{false,false};
 		clock = new Clock();
 		frame=new JFrame("JPCTBullet Test");
-		frame.setSize(800, 600);
+		frame.setSize(1600, 1200);
 		frame.setVisible(true);
 		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		
-		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
+		buffer = new FrameBuffer(1600,1200, FrameBuffer.SAMPLINGMODE_NORMAL);
 		
 		mouseMapper = new MouseMapper(rWorld,frame,buffer);
 		keyMapper = new KeyMapper(frame);
@@ -151,9 +151,9 @@ public class PerspectiveGame {
 		}
 		
 		yRotCC = new Matrix3f();
-		yRotCC.rotY((float)Math.PI/2f);
+		yRotCC.rotY((float)Math.PI/100f);
 		yRotC = new Matrix3f();
-		yRotC.rotY((float)-Math.PI/2f);
+		yRotC.rotY((float)-Math.PI/100f);
 	}
 
 	private void run() {
@@ -205,35 +205,27 @@ public class PerspectiveGame {
 				}
 				
 			}
-
 			
-			
-			camera.align(cameraObj);
-			camera.setPositionToCenter(cameraObj);
-			SimpleVector dirNew = camera.getDirection();
-			dirNew.rotateX(cameraPitch);
-			SimpleVector upNew = camera.getUpVector();
-			upNew.rotateX(cameraPitch);
-			camera.setOrientation(dirNew, upNew);
-			Transform tr = new Transform();
-			dWorld.getCollisionObjectArray().get(1).getWorldTransform(tr);
-
 			//keyboard input
 			
 			cameraBody.rigidBody.getWorldTransform(cameraTr);
+			//System.out.println(camera.getDirection());
 			SimpleVector f = camera.getDirection();
 			f.y = 0;
+			f.x = -f.x;
 			SimpleVector s = camera.getSideVector();
 			s.y = 0;
+			s.x = -s.x;
+
 			
 			if(motionStates[0])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t));
 			if(motionStates[1])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-f.x*F_SPEED*t,-f.y*F_SPEED*t,-f.z*F_SPEED*t));
 			if(motionStates[2])
-				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(s.x*F_SPEED*t,s.y*F_SPEED*t,s.z*F_SPEED*t));
-			if(motionStates[3])
 				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(-s.x*F_SPEED*t,-s.y*F_SPEED*t,-s.z*F_SPEED*t));
+			if(motionStates[3])
+				cameraBody.rigidBody.applyCentralImpulse(new Vector3f(s.x*F_SPEED*t,s.y*F_SPEED*t,s.z*F_SPEED*t));
 			
 			
 			if(rotationStates[0] && cameraPitch < (float)Math.PI/2f){
@@ -243,15 +235,36 @@ public class PerspectiveGame {
 				cameraPitch -= (float)Math.PI*t;
 			}
 			if(rotationStates[2]){
-				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
-				yRotCC.transform(l);
-				cameraBody.rigidBody.applyCentralImpulse(l);
+				Transform rot = new Transform();
+				cameraBody.rigidBody.getWorldTransform(rot);
+				rot.basis.mul(yRotCC);
+				cameraBody.rigidBody.setWorldTransform(rot);
 			}
 			if(rotationStates[3]){
-				Vector3f l = new Vector3f(f.x*F_SPEED*t,f.y*F_SPEED*t,f.z*F_SPEED*t);
-				yRotC.transform(l);
-				cameraBody.rigidBody.applyCentralImpulse(l);
+				Transform rot = new Transform();
+				cameraBody.rigidBody.getWorldTransform(rot);
+				rot.basis.mul(yRotC);
+				cameraBody.rigidBody.setWorldTransform(rot);
 			}
+			
+			
+			
+			camera.align(cameraObj);
+			camera.setPositionToCenter(cameraObj);
+			SimpleVector dirNew = camera.getDirection();
+			dirNew.rotateX(cameraPitch);
+			//dirNew.rotateY(cameraYaw);
+			SimpleVector upNew = camera.getUpVector();
+			upNew.rotateX(cameraPitch);
+			//upNew.rotateY(cameraYaw);
+			camera.setOrientation(dirNew, upNew);
+			Transform tr = new Transform();
+			dWorld.getCollisionObjectArray().get(1).getWorldTransform(tr);
+
+			
+			
+			
+			
 			
 			
 			

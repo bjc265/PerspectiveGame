@@ -23,6 +23,8 @@ public class ObjectBody {
 	public final RigidBody rigidBody;
 	public final String textureName;
 	
+	private boolean isBox;
+	
 	public final float CLOSEST_DISTANCE = 2;
 	public final float FARTHEST_DISTANCE = 20f;
 	
@@ -30,6 +32,7 @@ public class ObjectBody {
 		rigidBody = body;
 		renderObject = createRenderObject(body);
 		textureName = null;
+		isBox = false;
 	}
 	
 	public ObjectBody(RigidBody body, String texName){
@@ -46,6 +49,12 @@ public class ObjectBody {
 			break;
 		case("BoxShape"):
 			//TODO
+			isBox = true;
+			BoxShape bs = (BoxShape)rb.getCollisionShape();
+			Vector3f lengths = new Vector3f();
+			bs.getHalfExtentsWithoutMargin(lengths);
+			lengths.scale(2);
+			obj = ExtendedPrimitives.createBox(new SimpleVector(lengths.x,lengths.y,lengths.z));
 			break;
 		case("SphereShape"):
 			SphereShape ss = (SphereShape)rb.getCollisionShape();
@@ -62,6 +71,8 @@ public class ObjectBody {
 			SimpleVector newNormal = new SimpleVector(0,0,1);
 			SimpleVector rotAxis = newNormal.calcCross(oldNormal);
 			float angle = newNormal.calcAngle(oldNormal);
+			if(isBox)
+				obj.rotateZ((float)Math.PI/4f);
 			obj.rotateAxis(rotAxis, angle);
 			
 			break;
@@ -76,15 +87,28 @@ public class ObjectBody {
 		Vector3f t = transform.origin;
 		Matrix3f r = transform.basis;
 		
+		
 		Matrix translation = new Matrix();
 		Matrix rotation = new Matrix();
+		Matrix ro = new Matrix();
+		
 		
 		translation.setRow(3, -t.x, -t.y, t.z, 1);
 		
-		rotation.setDump(new float[]{r.m00,r.m01,r.m02,0,r.m10,r.m11,r.m12,0,r.m20,r.m21,r.m22,0,0,0,0,1});
+		ro.setDump(new float[]{r.m00,r.m01,r.m02,0,r.m10,r.m11,r.m12,0,r.m20,r.m21,r.m22,0,0,0,0,1});
+		
+		SimpleVector dir = new SimpleVector(0,0,1);
+		SimpleVector up = new SimpleVector(0,1,0);
+		
+		
 		
 		//jpct's axes are -x,-y,and z, so we need to reorient
-		rotation.setOrientation(new SimpleVector(0,0,1), new SimpleVector(0,1,0));
+		rotation.setOrientation(dir,up);
+		
+		rotation.matMul(ro);
+		
+	
+		
 		
 		Transform tr = new Transform();
 		rigidBody.getWorldTransform(tr);
