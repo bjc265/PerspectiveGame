@@ -25,7 +25,7 @@ public class DefaultLevel extends Level {
 	@Override
 	public ObjectBody constructCameraBody() {
 		//TODO
-		RigidBody body = new RigidBody(1, new DefaultMotionState(), new SphereShape(1));
+		RigidBody body = new RigidBody(2, new DefaultMotionState(), new SphereShape(1));
 		body.translate(new Vector3f(0,0,-3));
 		return new ObjectBody(body); 
 	}
@@ -34,6 +34,8 @@ public class DefaultLevel extends Level {
 	public void addObjectBodies(List<ObjectBody> bodies) {
 		RigidBody s = new RigidBody(100, new DefaultMotionState(), new SphereShape(1));
 		s.translate(new Vector3f(0,0,3));
+		s.setRestitution(0.5f);
+		s.setFriction(1f);
 		ObjectBody so = new ObjectBody(s);
 		so.renderObject.setAdditionalColor(new Color(255,0,0));
 		so.renderObject.setSpecularLighting(true);
@@ -41,7 +43,8 @@ public class DefaultLevel extends Level {
 		
 		RigidBody ss = new RigidBody(0.5f, new DefaultMotionState(), new SphereShape(0.67f));
 		ss.translate(new Vector3f(0.1f,3,3));
-		ss.setFriction(1);
+		ss.setFriction(0.2f);
+		ss.setRestitution(0.8f);
 		ObjectBody sso = new ObjectBody(ss);
 		sso.renderObject.setAdditionalColor(new Color(0,255,0));
 		bodies.add(sso);
@@ -53,7 +56,7 @@ public class DefaultLevel extends Level {
 		t.basis.rotX((float)-Math.PI/2);
 		t.origin.set(0, -3, 0);
 		ground.setWorldTransform(t);
-		ground.setFriction(1);
+		ground.setFriction(0);
 		ObjectBody go = new ObjectBody(ground);
 		go.renderObject.setAdditionalColor(new Color(0,255,0));
 		bodies.add(go);

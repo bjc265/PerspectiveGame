@@ -112,7 +112,7 @@ public class PerspectiveGame {
 		cameraBody.renderObject.setName("camera");
 		cameraBody.renderObject.setVisibility(false);
 		cameraBody.rigidBody.setAngularFactor(0);
-		cameraBody.rigidBody.setFriction(1000);
+		cameraBody.rigidBody.setFriction(100);
 	}
 
 	private void initializeLights() {
@@ -296,6 +296,15 @@ public class PerspectiveGame {
 					} else{
 						rescaleStates[1] = false;
 					}
+					break;
+				case(32):	//space
+					if(currKey.getState()){
+						Vector3f vel = new Vector3f();
+						cameraBody.rigidBody.getLinearVelocity(vel);
+						if(Math.abs(vel.y)<0.1)
+							cameraBody.rigidBody.applyCentralImpulse(new Vector3f(0,10,0));
+					}
+					break;
 				default:
 					break;
 				}
