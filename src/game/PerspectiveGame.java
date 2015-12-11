@@ -49,12 +49,14 @@ public class PerspectiveGame {
 	private boolean[] rotationStates;
 	private boolean[] rescaleStates;
 	
+	private Transform sObjLastTr;
+	
+	
+	
 	private Matrix3f yRotCC;
 	private Matrix3f yRotC;
 	
 	
-	@SuppressWarnings("unused")
-	private MouseMapper input;
 	
 	public final float F_SPEED = 120;
 
@@ -125,7 +127,7 @@ public class PerspectiveGame {
 	private void miscellaniousSetup() {
 		
 		cameraTr = new Transform();
-		
+		sObjLastTr = null;
 		
 		motionStates = new boolean[]{false,false,false,false};
 		rotationStates = new boolean[]{false,false,false,false};
@@ -138,7 +140,7 @@ public class PerspectiveGame {
 		
 		buffer = new FrameBuffer(800,600, FrameBuffer.SAMPLINGMODE_NORMAL);
 		
-		input = new MouseMapper(rWorld,frame,buffer);
+		mouseMapper = new MouseMapper(rWorld,frame,buffer);
 		keyMapper = new KeyMapper(frame);
 		
 		int cpu = Runtime.getRuntime().availableProcessors();
@@ -164,18 +166,47 @@ public class PerspectiveGame {
 
 			Camera camera = rWorld.getCamera(); 
 
+			//update camera
+			Object3D cameraObj = rWorld.getObjectByName("camera");
 
 			//update ObjectBodies
 			for(ObjectBody o : objects){
 				o.update();
-				if(rescaleStates[0] != rescaleStates[1] && mouseMapper.selectedObject != null && o.renderObject == mouseMapper.selectedObject)
-				{
-					//o.persepctiveScale(camera,t,rescaleStates[0]);
+				Matrix3f ma = new Matrix3f();
+				Vector3f an = new Vector3f();
+				o.rigidBody.getAngularVelocity(an);
+				o.rigidBody.getInvInertiaTensorWorld(ma);
+				if(mouseMapper.selectedObject == o.renderObject){
+					Transform tr = new Transform();
+					
+					if(mouseMapper.newlySelected){
+						o.rigidBody.getWorldTransform(tr);
+						sObjLastTr = new Transform();
+						sObjLastTr.basis.set((Matrix3f) tr.basis.clone());
+						
+						sObjLastTr.origin.set(tr.origin);
+						System.out.println(sObjLastTr.origin);
+						mouseMapper.newlySelected = false;
+					}
+					
+					o.rigidBody.setWorldTransform(sObjLastTr);
+					
+					Vector3f v = new Vector3f(tr.origin.x,tr.origin.y,tr.origin.z);
+					SimpleVector cv = camera.getPosition();
+					v.x -= cv.x;
+					v.y -= cv.y;
+					v.z -= cv.z;
+					if(rescaleStates[0] != rescaleStates[1])
+					{
+						System.out.println("rescaling");
+						o.persepctiveScale(camera,t,rescaleStates[0],sObjLastTr);
+					
+					}
 				}
+				
 			}
 
-			//update camera
-			Object3D cameraObj = rWorld.getObjectByName("camera");
+			
 			
 			camera.align(cameraObj);
 			camera.setPositionToCenter(cameraObj);

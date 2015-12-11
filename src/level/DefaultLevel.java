@@ -44,10 +44,13 @@ public class DefaultLevel extends Level {
 		RigidBody ss = new RigidBody(0.5f, new DefaultMotionState(), new SphereShape(0.67f));
 		ss.translate(new Vector3f(0.1f,3,3));
 		ss.setFriction(0.2f);
-		ss.setRestitution(0.8f);
+		ss.setRestitution(0.4f);
+		Vector3f inertia = new Vector3f();
+		ss.getCollisionShape().calculateLocalInertia(.5f, inertia);
+		ss.setMassProps(.5f, inertia);
 		ObjectBody sso = new ObjectBody(ss);
 		sso.renderObject.setAdditionalColor(new Color(0,255,0));
-		bodies.add(sso);
+		//bodies.add(sso);
 		
 		
 		RigidBody ground = new RigidBody(0, new DefaultMotionState(), new StaticPlaneShape(new Vector3f(0,0,1),1));
@@ -75,10 +78,12 @@ public class DefaultLevel extends Level {
 		Light light = new Light(world);
 		light.setPosition(new SimpleVector(3,0,0));
 		light.setIntensity(10,10,10);
+		//light.setAttenuation(-.5f);
 		
 		Light light2 = new Light(world);
 		light2.setPosition(new SimpleVector(-6,-1,1));
 		light2.setIntensity(30, 30, 30);
+		light2.setAttenuation(1);
 	}
 
 }

@@ -9,9 +9,9 @@ import com.bulletphysics.collision.shapes.SphereShape;
 import com.bulletphysics.collision.shapes.StaticPlaneShape;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Transform;
+import com.threed.jpct.Camera;
 import com.threed.jpct.Loader;
 import com.threed.jpct.Matrix;
-import com.threed.jpct.Mesh;
 import com.threed.jpct.Object3D;
 import com.threed.jpct.Primitives;
 import com.threed.jpct.SimpleVector;
@@ -22,6 +22,9 @@ public class ObjectBody {
 	public final Object3D renderObject;
 	public final RigidBody rigidBody;
 	public final String textureName;
+	
+	public final float CLOSEST_DISTANCE = 2;
+	public final float FARTHEST_DISTANCE = 20f;
 	
 	public ObjectBody(RigidBody body){
 		rigidBody = body;
@@ -83,9 +86,63 @@ public class ObjectBody {
 		//jpct's axes are -x,-y,and z, so we need to reorient
 		rotation.setOrientation(new SimpleVector(0,0,1), new SimpleVector(0,1,0));
 		
+		Transform tr = new Transform();
+		rigidBody.getWorldTransform(tr);
+		//System.out.println(tr.basis);
 		
 		renderObject.setTranslationMatrix(translation);
 		renderObject.setRotationMatrix(rotation);
+	}
+
+	public void persepctiveScale(Camera camera, float t, boolean b, Transform sObjLastTr) {
+		
+		Transform tr = sObjLastTr;
+		Vector3f v = new Vector3f(tr.origin.x,tr.origin.y,tr.origin.z);
+		
+		
+		SimpleVector cv = camera.getPosition();
+		cv.y--;
+		System.out.println(cv);
+		v.x -= cv.x;
+		v.y -= cv.y;
+		v.z -= cv.z;
+		
+		
+		float d = v.length();
+		
+		
+		if(b && v.length()< CLOSEST_DISTANCE || !b && v.length() > FARTHEST_DISTANCE)
+			return;
+		if(b)
+			v.negate();
+		v.normalize();
+		
+		
+		
+		v.scale(t);
+		
+		float m = v.length();
+		
+		tr.origin.x += v.x;
+		tr.origin.y += v.y;
+		tr.origin.z += v.z;
+		
+		float resizeFactor = (!b ? (d-m)/d + 1 : (d+m)/d - 1);
+		
+		System.out.println(resizeFactor);
+		
+		//rigidBody.getCollisionShape().setLocalScaling(new Vector3f(resizeFactor,resizeFactor,resizeFactor));
+		
+		rigidBody.getMotionState().setWorldTransform(tr);
+		
+		/*tr.basis.m00 *= resizeFactor;
+		tr.basis.m11 *= resizeFactor;
+		tr.basis.m22 *= resizeFactor;
+		
+		
+		//System.out.println(tr.basis);
+		*/
+		//rigidBody.setWorldTransform(tr);
 	}
 	
 }
